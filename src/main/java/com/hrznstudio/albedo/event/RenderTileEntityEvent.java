@@ -2,7 +2,7 @@ package com.hrznstudio.albedo.event;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.common.eventhandler.Event;
 
 public class RenderTileEntityEvent extends Event {
     private final TileEntity e;

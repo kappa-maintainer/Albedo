@@ -1,7 +1,7 @@
 package com.hrznstudio.albedo.event;
 
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.common.eventhandler.Event;
 
 public class ProfilerStartEvent extends Event {
     private final String section;

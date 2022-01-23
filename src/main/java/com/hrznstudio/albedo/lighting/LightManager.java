@@ -11,11 +11,11 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.LazyOptional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,7 +29,7 @@ public class LightManager {
     public static void uploadLights() {
         ShaderManager shader = ShaderManager.getCurrentShader();
         shader.setUniform("lightCount", lights.size());
-        for (int i = 0; i < Math.min(ConfigManager.maxLights.get(), lights.size()); i++) {
+        for (int i = 0; i < Math.min(ConfigManager.maxLights, lights.size()); i++) {
             if (i < lights.size()) {
                 Light l = lights.get(i);
                 shader.setUniform("lights[" + i + "].position", l.x, l.y, l.z);
@@ -54,7 +54,7 @@ public class LightManager {
     }
 
     public static void update(World world) {
-        Minecraft mc = Minecraft.getInstance();
+        Minecraft mc = Minecraft.getMinecraft();
         Entity cameraEntity = mc.getRenderViewEntity();
         if (cameraEntity != null) {
             cameraPos = interpolate(cameraEntity, mc.getRenderPartialTicks());
@@ -68,10 +68,10 @@ public class LightManager {
             return;
         }
 
-        GatherLightsEvent event = new GatherLightsEvent(lights, ConfigManager.maxDistance.get(), cameraPos, camera);
+        GatherLightsEvent event = new GatherLightsEvent(lights, ConfigManager.maxDistance, cameraPos, camera);
         MinecraftForge.EVENT_BUS.post(event);
 
-        int maxDist = ConfigManager.maxDistance.get();
+        int maxDist = ConfigManager.maxDistance;
 
         for (Entity e : world.getEntitiesWithinAABB(Entity.class, new AxisAlignedBB(
                 cameraPos.x - maxDist,
@@ -82,24 +82,28 @@ public class LightManager {
                 cameraPos.z + maxDist
         ))) {
             if (e instanceof EntityItem) {
-                LazyOptional<ILightProvider> provider = ((EntityItem) e).getItem().getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY);
-                provider.ifPresent(p -> p.gatherLights(event, e));
+                Albedo.LOGGER.debug(e.toString());
+                if(e.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    e.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                }
             }
-            LazyOptional<ILightProvider> provider = e.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY);
-            provider.ifPresent(p -> p.gatherLights(event, e));
             for (ItemStack itemStack : e.getHeldEquipment()) {
-                provider = itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY);
-                provider.ifPresent(p -> p.gatherLights(event, e));
+                Albedo.LOGGER.debug(itemStack.toString());
+                if(itemStack.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                }
             }
             for (ItemStack itemStack : e.getArmorInventoryList()) {
-                provider = itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY);
-                provider.ifPresent(p -> p.gatherLights(event, e));
+                if(itemStack.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                }
             }
         }
 
         for (TileEntity t : world.loadedTileEntityList) {
-            LazyOptional<ILightProvider> provider = t.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY);
-            provider.ifPresent(p -> p.gatherLights(event, null));
+            if(t.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null)) {
+                t.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, null);
+            }
         }
 
         lights.sort(distComparator);

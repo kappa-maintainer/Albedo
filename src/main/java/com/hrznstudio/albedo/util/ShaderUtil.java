@@ -1,12 +1,14 @@
 package com.hrznstudio.albedo.util;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
+import net.minecraft.client.resources.IResource;
+import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.resource.IResourceType;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-import net.minecraftforge.resource.VanillaResourceType;
+import net.minecraftforge.client.resource.IResourceType;
+import net.minecraftforge.client.resource.ISelectiveResourceReloadListener;
+import net.minecraftforge.client.resource.VanillaResourceType;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ARBShaderObjects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -15,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -38,7 +41,7 @@ public class ShaderUtil implements ISelectiveResourceReloadListener {
         OpenGlHelper.glAttachShader(program, vertexShader);
         OpenGlHelper.glAttachShader(program, fragmentShader);
         OpenGlHelper.glLinkProgram(program);
-        String s = GL20.glGetProgramInfoLog(program);
+        String s = GL20.glGetProgramInfoLog(program, 32768);
         System.out.println("GL LOG: "+s);
         return program;
     }
@@ -49,7 +52,10 @@ public class ShaderUtil implements ISelectiveResourceReloadListener {
             return 0;
         try {
             String s =readFileAsString(filename, manager);
-            OpenGlHelper.glShaderSource(shader, s);
+            ByteBuffer b = BufferUtils.createByteBuffer(s.length());
+            b.put(s.getBytes());
+            b.position(0);
+            OpenGlHelper.glShaderSource(shader, b);
         } catch (Exception e) {
             e.printStackTrace();
         }

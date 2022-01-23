@@ -1,6 +1,6 @@
 package com.hrznstudio.albedo.event;
 
-import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.common.eventhandler.Event;
 
 public class LightUniformEvent extends Event {
     public LightUniformEvent() {

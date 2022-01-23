@@ -9,6 +9,7 @@ import com.hrznstudio.albedo.util.ShaderUtil;
 import com.hrznstudio.albedo.util.TriConsumer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.entity.Entity;
@@ -17,6 +18,7 @@ import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntityEndGateway;
 import net.minecraft.tileentity.TileEntityEndPortal;
@@ -24,18 +26,17 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.IWorldReader;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.WorldProviderHell;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
 import org.lwjgl.opengl.GL11;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,12 +55,12 @@ public class EventManager {
     public void startThread(){
         thread = new Thread(() -> {
             while (!thread.isInterrupted()) {
-                if (Minecraft.getInstance().player != null) {
-                    EntityPlayer player = Minecraft.getInstance().player;
-                    if (Minecraft.getInstance().world != null) {
-                        IWorldReader reader = Minecraft.getInstance().world;
+                if (Minecraft.getMinecraft().player != null) {
+                    EntityPlayer player = Minecraft.getMinecraft().player;
+                    if (Minecraft.getMinecraft().world != null) {
+                        WorldClient reader = Minecraft.getMinecraft().world;
                         BlockPos playerPos = player.getPosition();
-                        int maxDistance = ConfigManager.maxDistance.get();
+                        int maxDistance = ConfigManager.maxDistance;
                         int r = maxDistance / 2;
                         Iterable<BlockPos.MutableBlockPos> posIterable = BlockPos.getAllInBoxMutable(playerPos.add(-r, -r, -r), playerPos.add(r, r, r));
                         for (BlockPos.MutableBlockPos pos : posIterable) {
@@ -92,26 +93,26 @@ public class EventManager {
                 isGui = false;
                 precedesEntities = true;
                 ShaderUtil.fastLightProgram.useShader();
-                ShaderUtil.fastLightProgram.setUniform("ticks", ticks + Minecraft.getInstance().getRenderPartialTicks());
+                ShaderUtil.fastLightProgram.setUniform("ticks", ticks + Minecraft.getMinecraft().getRenderPartialTicks());
                 ShaderUtil.fastLightProgram.setUniform("sampler", 0);
                 ShaderUtil.fastLightProgram.setUniform("lightmap", 1);
-                ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getInstance().player.posX, (float) Minecraft.getInstance().player.posY, (float) Minecraft.getInstance().player.posZ);
+                ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getMinecraft().player.posX, (float) Minecraft.getMinecraft().player.posY, (float) Minecraft.getMinecraft().player.posZ);
                 if (!postedLights) {
                     if (thread == null || !thread.isAlive()) {
                         startThread();
                     }
                     EXISTING.forEach((pos, lights) -> LightManager.lights.addAll(lights));
-                    LightManager.update(Minecraft.getInstance().world);
+                    LightManager.update(Minecraft.getMinecraft().world);
                     ShaderManager.stopShader();
                     MinecraftForge.EVENT_BUS.post(new LightUniformEvent());
                     ShaderUtil.fastLightProgram.useShader();
                     LightManager.uploadLights();
                     ShaderUtil.entityLightProgram.useShader();
-                    ShaderUtil.entityLightProgram.setUniform("ticks", ticks + Minecraft.getInstance().getRenderPartialTicks());
+                    ShaderUtil.entityLightProgram.setUniform("ticks", ticks + Minecraft.getMinecraft().getRenderPartialTicks());
                     ShaderUtil.entityLightProgram.setUniform("sampler", 0);
                     ShaderUtil.entityLightProgram.setUniform("lightmap", 1);
                     LightManager.uploadLights();
-                    ShaderUtil.entityLightProgram.setUniform("playerPos", (float) Minecraft.getInstance().player.posX, (float) Minecraft.getInstance().player.posY, (float) Minecraft.getInstance().player.posZ);
+                    ShaderUtil.entityLightProgram.setUniform("playerPos", (float) Minecraft.getMinecraft().player.posX, (float) Minecraft.getMinecraft().player.posY, (float) Minecraft.getMinecraft().player.posZ);
                     ShaderUtil.entityLightProgram.setUniform("lightingEnabled", GL11.glIsEnabled(GL11.GL_LIGHTING));
                     ShaderUtil.fastLightProgram.useShader();
                     postedLights = true;
@@ -125,7 +126,7 @@ public class EventManager {
                 ShaderUtil.fastLightProgram.useShader();
                 ShaderUtil.fastLightProgram.setUniform("sampler", 0);
                 ShaderUtil.fastLightProgram.setUniform("lightmap", 1);
-                ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getInstance().player.posX, (float) Minecraft.getInstance().player.posY, (float) Minecraft.getInstance().player.posZ);
+                ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getMinecraft().player.posX, (float) Minecraft.getMinecraft().player.posY, (float) Minecraft.getMinecraft().player.posZ);
                 ShaderUtil.fastLightProgram.setUniform("chunkX", 0);
                 ShaderUtil.fastLightProgram.setUniform("chunkY", 0);
                 ShaderUtil.fastLightProgram.setUniform("chunkZ", 0);
@@ -137,14 +138,14 @@ public class EventManager {
                 ShaderManager.stopShader();
             }
             if (event.getSection().compareTo("entities") == 0) {
-                if (Minecraft.getInstance().isCallingFromMinecraftThread()) {
+                if (Minecraft.getMinecraft().isCallingFromMinecraftThread()) {
                     ShaderUtil.entityLightProgram.useShader();
                     ShaderUtil.entityLightProgram.setUniform("lightingEnabled", true);
-                    ShaderUtil.entityLightProgram.setUniform("fogIntensity", Minecraft.getInstance().world.getDimension().getType() == DimensionType.NETHER ? 0.015625f : 1.0f);
+                    ShaderUtil.entityLightProgram.setUniform("fogIntensity", Minecraft.getMinecraft().world.provider instanceof WorldProviderHell ? 0.015625f : 1.0f);
                 }
             }
             if (event.getSection().compareTo("blockEntities") == 0) {
-                if (Minecraft.getInstance().isCallingFromMinecraftThread()) {
+                if (Minecraft.getMinecraft().isCallingFromMinecraftThread()) {
                     ShaderUtil.entityLightProgram.useShader();
                     ShaderUtil.entityLightProgram.setUniform("lightingEnabled", true);
                 }
@@ -162,11 +163,11 @@ public class EventManager {
                 ShaderUtil.fastLightProgram.useShader();
                 ShaderUtil.fastLightProgram.setUniform("sampler", 0);
                 ShaderUtil.fastLightProgram.setUniform("lightmap", 1);
-                ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getInstance().player.posX, (float) Minecraft.getInstance().player.posY, (float) Minecraft.getInstance().player.posZ);
+                ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getMinecraft().player.posX, (float) Minecraft.getMinecraft().player.posY, (float) Minecraft.getMinecraft().player.posZ);
             }
             if (event.getSection().compareTo("hand") == 0) {
                 ShaderUtil.entityLightProgram.useShader();
-                ShaderUtil.fastLightProgram.setUniform("entityPos", (float) Minecraft.getInstance().player.posX, (float) Minecraft.getInstance().player.posY, (float) Minecraft.getInstance().player.posZ);
+                ShaderUtil.fastLightProgram.setUniform("entityPos", (float) Minecraft.getMinecraft().player.posX, (float) Minecraft.getMinecraft().player.posY, (float) Minecraft.getMinecraft().player.posZ);
                 precedesEntities = true;
             }
             if (event.getSection().compareTo("gui") == 0) {
@@ -234,7 +235,7 @@ public class EventManager {
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) {
         postedLights = false;
-        if (Minecraft.getInstance().isCallingFromMinecraftThread()) {
+        if (Minecraft.getMinecraft().isCallingFromMinecraftThread()) {
             GlStateManager.disableLighting();
             ShaderManager.stopShader();
         }
@@ -245,9 +246,9 @@ public class EventManager {
         public void gatherLights(GatherLightsEvent event, Entity entity) {
             event.add(Light.builder()
                     .pos(
-                            (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) Minecraft.getInstance().getRenderPartialTicks()),
-                            (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * (double) Minecraft.getInstance().getRenderPartialTicks()),
-                            (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * (double) Minecraft.getInstance().getRenderPartialTicks())
+                            (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
+                            (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
+                            (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * (double) Minecraft.getMinecraft().getRenderPartialTicks())
                     )
                     .color(1.0f, 0.78431374f, 0)
                     .color(1.0f, 1.0f, 1.0f)
@@ -265,12 +266,12 @@ public class EventManager {
             //Vec3d heading = new Vec3d(10, 0, 0).rotateYaw(theta);
             event.add(Light.builder()
                     .pos(
-                            (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) Minecraft.getInstance().getRenderPartialTicks()),
-                            (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * (double) Minecraft.getInstance().getRenderPartialTicks()),
-                            (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * (double) Minecraft.getInstance().getRenderPartialTicks())
+                            (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
+                            (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
+                            (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * (double) Minecraft.getMinecraft().getRenderPartialTicks())
                     )
                     .color(1.0f, 0, 0)
-                    .radius(6)
+                    .radius(15)
                     //.color(1, 1, 1)
                     //.direction(10f, 0f, 0f, (float)(Math.PI/8.0))
                     //.direction(heading, (float)(Math.PI/3.0))
@@ -279,33 +280,39 @@ public class EventManager {
         }
     }
 
-    private LazyOptional<ILightProvider> torchProvider = LazyOptional.of(TorchLightProvider::new);
-    private LazyOptional<ILightProvider> redstoneProvider = LazyOptional.of(RedstoneTorchProvider::new);
-
     @SubscribeEvent
     public void attachCapabilities(AttachCapabilitiesEvent<ItemStack> event) {
-        if (ConfigManager.enableTorchImplementation.get()) {
-            if (event.getObject().getItem() == Blocks.TORCH.asItem()) {
+        String regname = event.getObject().getItem().getRegistryName().toString();
+            if (regname.equals("minecraft:torch")) {
                 event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
-                    @Nonnull
+
                     @Override
-                    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable EnumFacing side) {
-                        if (cap == Albedo.LIGHT_PROVIDER_CAPABILITY)
-                            return torchProvider.cast();
-                        return LazyOptional.empty();
+                    public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
+                        return capability == Albedo.LIGHT_PROVIDER_CAPABILITY;
+                    }
+
+                    @Nullable
+                    @Override
+                    public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
+                        Albedo.LOGGER.debug("ALBEDO TORCH");
+                        return (T) new TorchLightProvider();
                     }
                 });
-            } else if (event.getObject().getItem() == Blocks.REDSTONE_TORCH.asItem()) {
+            } else if (regname.equals("minecraft:redstone_torch")) {
                 event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
-                    @Nonnull
                     @Override
-                    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable EnumFacing side) {
-                        if (cap == Albedo.LIGHT_PROVIDER_CAPABILITY)
-                            return redstoneProvider.cast();
-                        return LazyOptional.empty();
+                    public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
+                        return capability == Albedo.LIGHT_PROVIDER_CAPABILITY;
+                    }
+
+                    @Nullable
+                    @Override
+                    public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
+                        Albedo.LOGGER.debug("ALBEDO REDSTONE TORCH");
+                        return (T) new RedstoneTorchProvider();
                     }
                 });
             }
-        }
+
     }
 }

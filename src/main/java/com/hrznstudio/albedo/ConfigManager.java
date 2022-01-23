@@ -1,49 +1,31 @@
 package com.hrznstudio.albedo;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.config.Config;
+import net.minecraftforge.common.config.Config.Comment;
+import net.minecraftforge.common.config.Config.LangKey;
+import net.minecraftforge.common.config.Config.RangeInt;
 
+@Config(modid = "albedo", name = "Albedo")
 public class ConfigManager {
+    @RangeInt(min = 0, max = 1000)
+    @Comment({"The maximum number of lights allowed to render in a scene. Lights are sorted nearest-first, so further-away lights will be culled after nearer lights."})
+    @LangKey("albedo.config.maxLights")
+    public static int maxLights = 40;
 
-    public static ForgeConfigSpec spec;
+    @RangeInt(min = 16, max = 256)
+    @Comment({"The maximum distance lights can be before being culled."})
+    @LangKey("albedo.config.maxDistance")
+    public static int maxDistance = 64;
 
-    public static ForgeConfigSpec.IntValue maxLights;
-    public static ForgeConfigSpec.IntValue maxDistance;
-    public static ForgeConfigSpec.BooleanValue disableLights;
-    public static ForgeConfigSpec.BooleanValue eightBitNightmare;
-    public static ForgeConfigSpec.BooleanValue enableTorchImplementation;
+    @Comment({"Disables albedo lighting."})
+    @LangKey("albedo.config.disableLights")
+    public static boolean disableLights = false;
 
-    static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
-        builder.comment("Albedo Config");
-        builder.push("Albedo");
-
-        disableLights = builder
-                .comment("Disables albedo lighting.")
-                .translation("albedo.config.enableLights")
-                .define("disableLights", false);
-        maxLights = builder
-                .comment("The maximum number of lights allowed to render in a scene. Lights are sorted nearest-first, so further-away lights will be culled after nearer lights.")
-                .translation("albedo.config.maxLights")
-                .defineInRange("maxLights", 20, 0, 200);
-        eightBitNightmare = builder
-                .comment("Enables retro mode.")
-                .translation("albedo.config.eightBitNightmare")
-                .define("eightBitNightmare", false);
-        enableTorchImplementation = builder
-                .comment("Enables default torch item implementation.")
-                .translation("albedo.config.enableTorchImplementation")
-                .worldRestart()
-                .define("enableTorchImplementation", true);
-        maxDistance = builder
-                .comment("The maximum distance lights can be before being culled.")
-                .translation("albedo.config.maxDistance")
-                .defineInRange("maxDistance", 64, 16, 256);
-
-        builder.pop();
-        spec = builder.build();
-    }
+    @Comment({"Holiday Events"})
+    @LangKey("albedo.config.holidy")
+    public static boolean holiday = true;
 
     public static boolean isLightingEnabled() {
-        return !disableLights.get();
+        return !disableLights;
     }
 }

@@ -4,15 +4,14 @@ import com.hrznstudio.albedo.ConfigManager;
 import com.hrznstudio.albedo.EventManager;
 import com.hrznstudio.albedo.event.RenderChunkUniformsEvent;
 import net.minecraft.client.renderer.chunk.RenderChunk;
-import net.minecraft.client.renderer.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraftforge.common.MinecraftForge;
 
 public class RenderUtil {
     public static boolean lightingEnabled = false;
     public static ShaderManager previousShader;
     public static boolean enabledLast = false;
-    public static ItemCameraTransforms.TransformType itemTransformType = TransformType.NONE;
+    public static ItemCameraTransforms.TransformType itemTransformType = ItemCameraTransforms.TransformType.NONE;
 
     public static void renderChunkUniforms(RenderChunk c) {
         MinecraftForge.EVENT_BUS.post(new RenderChunkUniformsEvent(c));
@@ -44,7 +43,7 @@ public class RenderUtil {
         }
     }
 
-    public static void setTransform(TransformType t) {
+    public static void setTransform(ItemCameraTransforms.TransformType t) {
         itemTransformType = t;
     }
 

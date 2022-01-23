@@ -1,76 +1,79 @@
 package com.hrznstudio.albedo;
 
+import com.google.common.collect.ImmutableMap;
 import com.hrznstudio.albedo.event.GatherLightsEvent;
-import com.hrznstudio.albedo.lighting.DefaultLightProvider;
 import com.hrznstudio.albedo.lighting.ILightProvider;
-import com.hrznstudio.albedo.lighting.Light;
 import com.hrznstudio.albedo.util.ShaderUtil;
 import com.hrznstudio.albedo.util.TriConsumer;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockRedstoneTorch;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.INBTBase;
-import net.minecraft.resources.IReloadableResourceManager;
+import net.minecraft.client.resources.IReloadableResourceManager;
+import net.minecraft.client.resources.IResourceManagerReloadListener;
+import net.minecraft.client.resources.IResourcePack;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.fml.DeferredWorkQueue;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-@Mod("albedo")
+@Mod(modid = "albedo", version = "1.2.0", clientSideOnly = true, acceptedMinecraftVersions = "[1.12.2]")
 public class Albedo {
 
     public static Map<Block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent>> MAP = new HashMap<>();
-
-    public Albedo() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::loadComplete);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.spec);
-    }
-
     @CapabilityInject(ILightProvider.class)
     public static Capability<ILightProvider> LIGHT_PROVIDER_CAPABILITY;
+    public static Logger LOGGER;
 
-    public void commonSetup(FMLCommonSetupEvent event) {
+    public Albedo() {
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    public static TriConsumer<BlockPos, IBlockState, GatherLightsEvent> getLightHandler(Block block) {
+        return MAP.get(block);
+    }
+
+    public static ImmutableMap<Block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent>> getBlockHandlers() {
+        return ImmutableMap.copyOf(MAP);
+    }
+
+    @EventHandler
+    public void preinit(FMLPreInitializationEvent event) {
+        LOGGER = event.getModLog();
         CapabilityManager.INSTANCE.register(ILightProvider.class, new Capability.IStorage<ILightProvider>() {
             @Nullable
-            @Override
-            public INBTBase writeNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side) {
+            public NBTBase writeNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side) {
                 return null;
             }
 
-            @Override
-            public void readNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side, INBTBase nbt) {
-
+            public void readNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side, NBTBase nbt) {
             }
-        }, DefaultLightProvider::new);
+        }, com.hrznstudio.albedo.lighting.DefaultLightProvider::new);
     }
 
-    public void loadComplete(FMLLoadCompleteEvent event) {
-        DeferredWorkQueue.runLater(() -> ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(new ShaderUtil()));
+    @EventHandler
+    public void loadComplete(FMLPostInitializationEvent event) {
+        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener((IResourceManagerReloadListener) new ShaderUtil());
+        MinecraftForge.EVENT_BUS.register(new EventManager());
     }
 
     public void registerBlockHandler(Block block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent> consumer) {
         MAP.put(block, consumer);
     }
 
-    public void clientSetup(FMLClientSetupEvent event) {
+    /*public void clientSetup(FMLClientSetupEvent event) {
         MinecraftForge.EVENT_BUS.register(new EventManager());
         MinecraftForge.EVENT_BUS.register(new ConfigManager());
         registerBlockHandler(Blocks.REDSTONE_TORCH, (pos, state, evt) -> {
@@ -82,5 +85,5 @@ public class Albedo {
                         .build());
             }
         });
-    }
+    }*/
 }

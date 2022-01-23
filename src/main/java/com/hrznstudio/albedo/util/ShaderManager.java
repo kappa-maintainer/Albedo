@@ -1,6 +1,6 @@
 package com.hrznstudio.albedo.util;
 
-import net.minecraft.resources.IResourceManager;
+import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL20;
 
