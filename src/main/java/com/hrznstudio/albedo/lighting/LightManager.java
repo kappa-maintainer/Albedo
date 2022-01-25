@@ -4,15 +4,18 @@ import com.hrznstudio.albedo.Albedo;
 import com.hrznstudio.albedo.ConfigManager;
 import com.hrznstudio.albedo.event.GatherLightsEvent;
 import com.hrznstudio.albedo.util.ShaderManager;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
@@ -82,13 +85,11 @@ public class LightManager {
                 cameraPos.z + maxDist
         ))) {
             if (e instanceof EntityItem) {
-                Albedo.LOGGER.debug(e.toString());
-                if(e.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    e.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                if(((EntityItem) e).getItem().hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    ((EntityItem) e).getItem().getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
                 }
             }
             for (ItemStack itemStack : e.getHeldEquipment()) {
-                Albedo.LOGGER.debug(itemStack.toString());
                 if(itemStack.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
                     itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
                 }
@@ -102,7 +103,7 @@ public class LightManager {
 
         for (TileEntity t : world.loadedTileEntityList) {
             if(t.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null)) {
-                t.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, null);
+                t.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, t);
             }
         }
 

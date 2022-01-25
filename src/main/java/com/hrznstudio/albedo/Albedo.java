@@ -9,8 +9,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IReloadableResourceManager;
-import net.minecraft.client.resources.IResourceManagerReloadListener;
-import net.minecraft.client.resources.IResourcePack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -18,7 +16,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -26,13 +23,13 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Mod(modid = "albedo", version = "1.2.0", clientSideOnly = true, acceptedMinecraftVersions = "[1.12.2]")
 public class Albedo {
 
-    public static Map<Block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent>> MAP = new HashMap<>();
+    public static Map<Block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent>> MAP = new LinkedHashMap<>();
     @CapabilityInject(ILightProvider.class)
     public static Capability<ILightProvider> LIGHT_PROVIDER_CAPABILITY;
     public static Logger LOGGER;
@@ -61,15 +58,16 @@ public class Albedo {
             public void readNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side, NBTBase nbt) {
             }
         }, com.hrznstudio.albedo.lighting.DefaultLightProvider::new);
+
     }
 
     @EventHandler
     public void loadComplete(FMLPostInitializationEvent event) {
-        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener((IResourceManagerReloadListener) new ShaderUtil());
+        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(new ShaderUtil());
         MinecraftForge.EVENT_BUS.register(new EventManager());
     }
 
-    public void registerBlockHandler(Block block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent> consumer) {
+    public static void registerBlockHandler(Block block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent> consumer) {
         MAP.put(block, consumer);
     }
 

@@ -7,6 +7,7 @@ varying vec4 uv;
 uniform sampler2D sampler;
 uniform sampler2D lightmap;
 uniform vec3 playerPos;
+uniform vec4 colorFacor;
 
 
 
@@ -40,8 +41,9 @@ void main() {
 	float fog = gl_Fog.density * dist * gl_Fog.density;
 	fog = 1.0f-clamp( fog, 0.0f, 1.0f );
 	baseColor = vec4(mix( vec3( gl_Fog.color ), baseColor.xyz, fog ).xyz,baseColor.w);
-
-
+    
+    vec4 amult = vec4(vec3(1.0f) * (1.0f - colorFacor.a) + colorFacor.rgb * colorFacor.a, 1.0f);
+    baseColor = baseColor * amult;
 
 	gl_FragColor = baseColor;
 

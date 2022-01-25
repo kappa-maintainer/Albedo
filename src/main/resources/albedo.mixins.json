@@ -1,16 +1,19 @@
 {
-	"required": true,
-	"package": "com.hrznstudio.albedo.mixin",
-	"compatibilityLevel": "JAVA_8",
-	"refmap": "mixins.albedo.refmap.json",
-	"target": "@env(DEFAULT)",
-	"client": [
-		"MixinChunkRenderContainer",
-		"MixinGlStateManager",
-		"MixinProfiler",
-		"MixinRenderManager",
-		"MixinTileEntityRendererDispatcher"
-	],
-	"setSourceFile": true,
-	"minVersion": "0.8"
+  "required": true,
+  "package": "com.hrznstudio.albedo.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.albedo.refmap.json",
+  "target": "@env(DEFAULT)",
+  "client": [
+    "MixinChunkRenderContainer",
+    "MixinGlStateManager",
+    "MixinProfiler",
+    "MixinRenderManager",
+    "MixinTileEntityRendererDispatcher"
+  ],
+  "setSourceFile": true,
+  "minVersion": "0.8",
+  "mixins": [
+    "MixinWorld"
+  ]
 }
