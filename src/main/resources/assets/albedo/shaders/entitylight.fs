@@ -25,8 +25,8 @@ void main() {
 
 	vec3 lcolor_2 = clamp(lcolor.xyz*intens, 0.0f, 1.0f);
 	
-	//lightdark = lightdark + lcolor_2;   //More washed-out, but more physically correct
-	lightdark = max(lightdark, lcolor_2); //Vivid but unrealistic
+	lightdark = lightdark + lcolor_2;   //More washed-out, but more physically correct
+	//lightdark = max(lightdark, lcolor_2); //Vivid but unrealistic
 
 	//combine texture with lighting
 	vec4 baseColor = gl_Color * texture2D(sampler,gl_TexCoord[0].st);

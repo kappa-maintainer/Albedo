@@ -105,6 +105,9 @@ public class LightManager {
             if(t.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null)) {
                 t.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, t);
             }
+            if(t instanceof ILightProvider) {
+                ((ILightProvider) t).gatherLights(event, t);
+            }
         }
 
         lights.sort(distComparator);

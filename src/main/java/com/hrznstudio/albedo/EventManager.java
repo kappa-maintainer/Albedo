@@ -4,6 +4,7 @@ import com.hrznstudio.albedo.event.*;
 import com.hrznstudio.albedo.lighting.ILightProvider;
 import com.hrznstudio.albedo.lighting.Light;
 import com.hrznstudio.albedo.lighting.LightManager;
+import com.hrznstudio.albedo.tileentity.LightDummyTile;
 import com.hrznstudio.albedo.util.ShaderManager;
 import com.hrznstudio.albedo.util.ShaderUtil;
 import com.hrznstudio.albedo.util.TriConsumer;
@@ -90,7 +91,7 @@ public class EventManager {
                 }
             }
         });
-        thread.start();
+        //thread.start();
     }
 
     @SubscribeEvent
@@ -249,6 +250,27 @@ public class EventManager {
         }
     }
 
+    @SubscribeEvent
+    public void attachTileEntityCapabilities(AttachCapabilitiesEvent<TileEntity> event) {
+        /*if (event.getObject() instanceof LightDummyTile) {
+            event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
+
+                @Override
+                public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
+                    return capability == Albedo.LIGHT_PROVIDER_CAPABILITY;
+                }
+
+                @Nullable
+                @Override
+                public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
+                    return (T) new TorchLightProvider();
+                }
+            });
+        }*/
+        if (Item.getItemFromBlock(event.getObject().getBlockType()).getRegistryName().equals("minecraft:torch")) {
+            //TODO match config
+        }
+    }
 
     @SubscribeEvent
     public void attachCapabilities(AttachCapabilitiesEvent<ItemStack> event) {
