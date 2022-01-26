@@ -3,6 +3,7 @@ package com.hrznstudio.albedo;
 import com.google.common.collect.ImmutableMap;
 import com.hrznstudio.albedo.event.GatherLightsEvent;
 import com.hrznstudio.albedo.lighting.ILightProvider;
+import com.hrznstudio.albedo.lighting.LightCapabilityHandler;
 import com.hrznstudio.albedo.util.ShaderUtil;
 import com.hrznstudio.albedo.util.TriConsumer;
 import net.minecraft.block.Block;
@@ -30,8 +31,7 @@ import java.util.Map;
 public class Albedo {
 
     public static Map<Block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent>> MAP = new LinkedHashMap<>();
-    @CapabilityInject(ILightProvider.class)
-    public static Capability<ILightProvider> LIGHT_PROVIDER_CAPABILITY;
+
     public static Logger LOGGER;
 
     public Albedo() {
@@ -49,15 +49,7 @@ public class Albedo {
     @EventHandler
     public void preinit(FMLPreInitializationEvent event) {
         LOGGER = event.getModLog();
-        CapabilityManager.INSTANCE.register(ILightProvider.class, new Capability.IStorage<ILightProvider>() {
-            @Nullable
-            public NBTBase writeNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side) {
-                return null;
-            }
-
-            public void readNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side, NBTBase nbt) {
-            }
-        }, com.hrznstudio.albedo.lighting.DefaultLightProvider::new);
+        LightCapabilityHandler.regCapability();
 
     }
 

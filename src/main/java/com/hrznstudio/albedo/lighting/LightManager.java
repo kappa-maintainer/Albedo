@@ -85,25 +85,25 @@ public class LightManager {
                 cameraPos.z + maxDist
         ))) {
             if (e instanceof EntityItem) {
-                if(((EntityItem) e).getItem().hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    ((EntityItem) e).getItem().getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                if(((EntityItem) e).getItem().hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    ((EntityItem) e).getItem().getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
                 }
             }
             for (ItemStack itemStack : e.getHeldEquipment()) {
-                if(itemStack.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                if(itemStack.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    itemStack.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
                 }
             }
             for (ItemStack itemStack : e.getArmorInventoryList()) {
-                if(itemStack.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    itemStack.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                if(itemStack.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                    itemStack.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
                 }
             }
         }
 
         for (TileEntity t : world.loadedTileEntityList) {
-            if(t.hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null)) {
-                t.getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, t);
+            if(t.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, null)) {
+                t.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, t);
             }
             if(t instanceof ILightProvider) {
                 ((ILightProvider) t).gatherLights(event, t);

@@ -17,11 +17,6 @@ public class DefaultLightProvider implements ILightProvider{
 
     }
 
-    @Override
-    public void gatherLights(GatherLightsEvent event, BlockPos context) {
-
-    }
-
 
 
 }

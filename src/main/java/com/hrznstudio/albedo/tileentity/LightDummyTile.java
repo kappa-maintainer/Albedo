@@ -29,8 +29,4 @@ public class LightDummyTile extends TileEntity implements ILightProvider {
                 .build());
     }
 
-    @Override
-    public void gatherLights(GatherLightsEvent event, BlockPos context) {
-
-    }
 }

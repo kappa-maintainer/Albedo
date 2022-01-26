@@ -3,6 +3,7 @@ package com.hrznstudio.albedo;
 import com.hrznstudio.albedo.event.*;
 import com.hrznstudio.albedo.lighting.ILightProvider;
 import com.hrznstudio.albedo.lighting.Light;
+import com.hrznstudio.albedo.lighting.LightCapabilityHandler;
 import com.hrznstudio.albedo.lighting.LightManager;
 import com.hrznstudio.albedo.tileentity.LightDummyTile;
 import com.hrznstudio.albedo.util.ShaderManager;
@@ -281,7 +282,7 @@ public class EventManager {
 
                 @Override
                 public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-                    return capability == Albedo.LIGHT_PROVIDER_CAPABILITY;
+                    return capability == LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY;
                 }
 
                 @Nullable
@@ -306,7 +307,7 @@ public class EventManager {
             event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
                 @Override
                 public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-                    return capability == Albedo.LIGHT_PROVIDER_CAPABILITY;
+                    return capability == LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY;
                 }
 
                 @Nullable
@@ -354,21 +355,6 @@ public class EventManager {
 
         }
 
-        @Override
-        public void gatherLights(GatherLightsEvent event, BlockPos context) {
-            event.add(Light.builder()
-                    .pos(
-                            context.getX(),
-                            context.getY(),
-                            context.getZ()
-                    )
-                    .color(1.0f, 0.78431374f, 0)
-                    .color(1.0f, 1.0f, 1.0f)
-                    .direction(10f, 0f, 0f, (float) (Math.PI / 8.0))
-                    .radius(10)
-                    .build()
-            );
-        }
 
     }
 
@@ -397,21 +383,7 @@ public class EventManager {
 
         }
 
-        @Override
-        public void gatherLights(GatherLightsEvent event, BlockPos context) {
-            event.add(Light.builder()
-                    .pos(
-                            context.getX(),
-                            context.getY(),
-                            context.getZ()
-                    )
-                    .color(1.0f, 0, 0)
-                    .radius(15)
-                    //.color(1, 1, 1)
-                    //.direction(10f, 0f, 0f, (float)(Math.PI/8.0))
-                    //.direction(heading, (float)(Math.PI/3.0))
-                    .build());
-        }
+
 
     }
 }
