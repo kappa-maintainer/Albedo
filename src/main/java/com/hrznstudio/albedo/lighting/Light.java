@@ -112,11 +112,25 @@ public class Light {
             return this;
         }
 
+        public Builder color(LightColor color) {
+            this.r = color.r;
+            this.g = color.g;
+            this.b = color.b;
+            this.a = color.a;
+            return this;
+
+        }
+
         public Builder radius(float radius) {
         	this.rx = 0;
             this.ry = radius;
             this.rz = 0;
             this.angle = (float)(Math.PI*2.0);
+            return this;
+        }
+
+        public Builder alpha(float a) {
+            this.a = a;
             return this;
         }
 

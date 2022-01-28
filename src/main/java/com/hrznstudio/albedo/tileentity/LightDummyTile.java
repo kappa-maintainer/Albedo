@@ -1,32 +1,55 @@
 package com.hrznstudio.albedo.tileentity;
 
-import com.hrznstudio.albedo.event.GatherLightsEvent;
-import com.hrznstudio.albedo.lighting.ILightProvider;
-import com.hrznstudio.albedo.lighting.Light;
-import net.minecraft.entity.Entity;
+import com.hrznstudio.albedo.lighting.ILightProviderBlock;
+import com.hrznstudio.albedo.lighting.LightColor;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 
-public class LightDummyTile extends TileEntity implements ILightProvider {
+public class LightDummyTile extends TileEntity{
+    //Deal with block meta some other time
+    //ILightProviderBlock lightblocktype;
+    public LightColor color = new LightColor(0.0F,0.0F,0.0F,0.0F,0.0F);
+    public LightDummyTile(ILightProviderBlock posblock) {
+        this.color = posblock.getLightColor();
+    }
+    public LightColor getColor() {return this.color;}
+    //For chunk loading?
+    public LightDummyTile() {
+        super();
+    }
+
+
+
     @Override
-    public void gatherLights(GatherLightsEvent event, Entity context) {
+    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+        compound.setFloat("r", color.r);
+        compound.setFloat("g", color.g);
+        compound.setFloat("b", color.b);
+        compound.setFloat("a", color.a);
+        compound.setFloat("rad", color.rad);
 
+        return super.writeToNBT(compound);
     }
 
     @Override
-    public void gatherLights(GatherLightsEvent event, TileEntity context) {
-        event.add(Light.builder()
-                .pos(
-                        context.getPos().getX(),
-                        context.getPos().getY(),
-                        context.getPos().getZ()
-                )
-                .color(1.0f, 0, 1.0f)
-                .radius(15)
-                //.color(1, 1, 1)
-                //.direction(10f, 0f, 0f, (float)(Math.PI/8.0))
-                //.direction(heading, (float)(Math.PI/3.0))
-                .build());
+    public void readFromNBT(NBTTagCompound compound) {
+        this.color = new LightColor(
+                compound.getFloat("r"),
+                compound.getFloat("g"),
+                compound.getFloat("b"),
+                compound.getFloat("a"),
+                compound.getFloat("rad"));
+        super.readFromNBT(compound);
     }
 
+    @Override
+    public NBTTagCompound getUpdateTag() {
+        NBTTagCompound compound = this.writeToNBT(new NBTTagCompound());
+        return compound;
+    }
+
+    @Override
+    public void handleUpdateTag(NBTTagCompound compound) {
+        this.readFromNBT(compound);
+    }
 }

@@ -1,12 +1,11 @@
-package com.hrznstudio.albedo.lighting;
+package com.hrznstudio.albedo.capability;
 
 import com.hrznstudio.albedo.event.GatherLightsEvent;
-import net.minecraft.block.state.IBlockState;
+import com.hrznstudio.albedo.lighting.ILightProvider;
 import net.minecraft.entity.Entity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 
-public class DefaultLightProvider implements ILightProvider{
+public class DefaultLightProvider implements ILightProvider {
     @Override
     public void gatherLights(GatherLightsEvent event, Entity context) {
 

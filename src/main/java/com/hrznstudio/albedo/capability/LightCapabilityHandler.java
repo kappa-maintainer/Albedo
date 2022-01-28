@@ -1,5 +1,6 @@
-package com.hrznstudio.albedo.lighting;
+package com.hrznstudio.albedo.capability;
 
+import com.hrznstudio.albedo.lighting.ILightProvider;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.capabilities.Capability;
@@ -21,6 +22,6 @@ public class LightCapabilityHandler {
 
             public void readNBT(Capability<ILightProvider> capability, ILightProvider instance, EnumFacing side, NBTBase nbt) {
             }
-        }, com.hrznstudio.albedo.lighting.DefaultLightProvider::new);
+        }, DefaultLightProvider::new);
     }
 }

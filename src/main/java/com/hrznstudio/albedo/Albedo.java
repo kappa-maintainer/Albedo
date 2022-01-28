@@ -2,28 +2,27 @@ package com.hrznstudio.albedo;
 
 import com.google.common.collect.ImmutableMap;
 import com.hrznstudio.albedo.event.GatherLightsEvent;
-import com.hrznstudio.albedo.lighting.ILightProvider;
-import com.hrznstudio.albedo.lighting.LightCapabilityHandler;
+import com.hrznstudio.albedo.capability.LightCapabilityHandler;
+import com.hrznstudio.albedo.tileentity.LightDummyTile;
+import com.hrznstudio.albedo.tileentity.MetaSensitiveDummy;
+import com.hrznstudio.albedo.tileentity.SwitchableRedstoneDummy;
 import com.hrznstudio.albedo.util.ShaderUtil;
 import com.hrznstudio.albedo.util.TriConsumer;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IReloadableResourceManager;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityInject;
-import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import org.apache.logging.log4j.Logger;
 
-import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -50,13 +49,24 @@ public class Albedo {
     public void preinit(FMLPreInitializationEvent event) {
         LOGGER = event.getModLog();
         LightCapabilityHandler.regCapability();
+        GameRegistry.registerTileEntity(LightDummyTile.class, new ResourceLocation("albedo", "light_dummy"));
+        GameRegistry.registerTileEntity(SwitchableRedstoneDummy.class, new ResourceLocation("albedo", "light_dummy_switchable"));
+        GameRegistry.registerTileEntity(MetaSensitiveDummy.class, new ResourceLocation("albedo", "light_dummy_meta"));
 
+    }
+
+    @EventHandler
+    public void init(FMLInitializationEvent event)
+    {
+        ConfigHandler.reloadList();
+        EventManager.handleNonTEBlock();
     }
 
     @EventHandler
     public void loadComplete(FMLPostInitializationEvent event) {
         ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(new ShaderUtil());
         MinecraftForge.EVENT_BUS.register(new EventManager());
+
     }
 
     public static void registerBlockHandler(Block block, TriConsumer<BlockPos, IBlockState, GatherLightsEvent> consumer) {

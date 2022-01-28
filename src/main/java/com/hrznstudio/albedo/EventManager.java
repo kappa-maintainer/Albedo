@@ -1,47 +1,39 @@
 package com.hrznstudio.albedo;
 
+import com.hrznstudio.albedo.capability.*;
+import com.hrznstudio.albedo.lighting.ILightProviderBlock;
 import com.hrznstudio.albedo.event.*;
-import com.hrznstudio.albedo.lighting.ILightProvider;
-import com.hrznstudio.albedo.lighting.Light;
-import com.hrznstudio.albedo.lighting.LightCapabilityHandler;
-import com.hrznstudio.albedo.lighting.LightManager;
+import com.hrznstudio.albedo.lighting.*;
 import com.hrznstudio.albedo.tileentity.LightDummyTile;
+import com.hrznstudio.albedo.tileentity.MetaSensitiveDummy;
+import com.hrznstudio.albedo.tileentity.SwitchableRedstoneDummy;
 import com.hrznstudio.albedo.util.ShaderManager;
 import com.hrznstudio.albedo.util.ShaderUtil;
-import com.hrznstudio.albedo.util.TriConsumer;
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.effect.EntityLightningBolt;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityEndGateway;
-import net.minecraft.tileentity.TileEntityEndPortal;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.tileentity.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldProviderHell;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
+
+import static com.hrznstudio.albedo.ConfigManager.*;
 
 public class EventManager {
     public static final Map<BlockPos, List<Light>> EXISTING = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -50,50 +42,8 @@ public class EventManager {
     boolean postedLights = false;
     boolean precedesEntities = true;
     String section = "";
-    Thread thread;
 
-    public void startThread() {
-        thread = new Thread(() -> {
 
-            while (!thread.isInterrupted()) {
-                if (!ConfigManager.isLightingEnabled()) {
-                    EXISTING.clear();
-                    return;
-                }
-                if (Minecraft.getMinecraft().player != null) {
-                    EntityPlayer player = Minecraft.getMinecraft().player;
-                    if (Minecraft.getMinecraft().world != null) {
-                        WorldClient reader = Minecraft.getMinecraft().world;
-                        BlockPos playerPos = player.getPosition();
-                        int maxDistance = ConfigManager.maxDistance;
-                        int r = maxDistance / 2;
-                        Iterable<BlockPos.MutableBlockPos> posIterable = BlockPos.getAllInBoxMutable(playerPos.add(-r, -r, -r), playerPos.add(r, r, r));
-                        for (BlockPos.MutableBlockPos pos : posIterable) {
-                            Vec3d cameraPosition = LightManager.cameraPos;
-                            ICamera camera = LightManager.camera;
-                            IBlockState state = reader.getBlockState(pos);
-                            ArrayList<Light> lights = new ArrayList<>();
-                            GatherLightsEvent lightsEvent = new GatherLightsEvent(lights, maxDistance, cameraPosition, camera);
-                            TriConsumer<BlockPos, IBlockState, GatherLightsEvent> consumer = Albedo.MAP.get(state.getBlock());
-                            if (consumer != null)
-                                consumer.apply(pos, state, lightsEvent);
-
-                            /*if (Item.getItemFromBlock(state.getBlock()).getDefaultInstance().hasCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null)) {
-                                Item.getItemFromBlock(state.getBlock()).getDefaultInstance().getCapability(Albedo.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(lightsEvent, pos);
-                            }*/
-
-                            if (lights.isEmpty()) {
-                                EXISTING.remove(pos);
-                            } else {
-                                EXISTING.put(pos.toImmutable(), lights);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        //thread.start();
-    }
 
     @SubscribeEvent
     public void onProfilerChange(ProfilerStartEvent event) {
@@ -109,9 +59,6 @@ public class EventManager {
                     ShaderUtil.fastLightProgram.setUniform("lightmap", 1);
                     ShaderUtil.fastLightProgram.setUniform("playerPos", (float) Minecraft.getMinecraft().player.posX, (float) Minecraft.getMinecraft().player.posY, (float) Minecraft.getMinecraft().player.posZ);
                     if (!postedLights) {
-                        if (thread == null || !thread.isAlive()) {
-                            startThread();
-                        }
                         EXISTING.forEach((pos, lights) -> LightManager.lights.addAll(lights));
                         LightManager.update(Minecraft.getMinecraft().world);
                         ShaderManager.stopShader();
@@ -242,6 +189,8 @@ public class EventManager {
         }
     }
 
+
+
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) {
         postedLights = false;
@@ -251,139 +200,115 @@ public class EventManager {
         }
     }
 
+    public static void handleNonTEBlock() {
+        for(Block b: Block.REGISTRY) {
+            if(redstoneLights) {
+                if(b instanceof BlockRedstoneTorch) {
+                    ((ILightProviderBlock)b).setProvider(true);
+                    ((ILightProviderBlock)b).setLightColor(new LightColor(1.0F,0.0F,0.0F,0.6F,3.0F));
+                    continue;
+                }
+                if(b instanceof BlockRedstoneLight) {
+                    ((ILightProviderBlock)b).setProvider(true);
+                    ((ILightProviderBlock)b).setLightColor(new LightColor(0.82F,0.82F,0.0F,0.8F,5.0F));
+                    continue;
+                }
+                if(b instanceof BlockRedstoneOre) {
+                    ((ILightProviderBlock)b).setProvider(true);
+                    ((ILightProviderBlock)b).setLightColor(new LightColor(1.0F,0.0F,0.0F,0.2F,1.5F));
+                    continue;
+                }
+                if(b instanceof BlockRedstoneWire) {
+                    ((ILightProviderBlock)b).setProvider(true);
+                    ((ILightProviderBlock)b).setLightColor(new LightColor(1.0F,0.0F,0.0F,0.0F,2.0F));
+                    continue;
+                }
+            }
+            LightColor color = ConfigHandler.torchLight.get(Item.getItemFromBlock(b));
+            if(color != null) {
+                ((ILightProviderBlock)b).setProvider(true);
+                ((ILightProviderBlock)b).setLightColor(color);
+            }
+            color = ConfigHandler.constantLight.get(Item.getItemFromBlock(b));
+            if(color != null) {
+                ((ILightProviderBlock)b).setProvider(true);
+                ((ILightProviderBlock)b).setLightColor(color);
+            }
+            color = ConfigHandler.blockLight.get(b);
+            if(color != null) {
+                ((ILightProviderBlock)b).setProvider(true);
+                ((ILightProviderBlock)b).setLightColor(color);
+            }
+
+        }
+    }
+
     @SubscribeEvent
     public void attachTileEntityCapabilities(AttachCapabilitiesEvent<TileEntity> event) {
-        /*if (event.getObject() instanceof LightDummyTile) {
-            event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
+        TileEntity te = event.getObject();
+        ResourceLocation res = TileEntity.getKey(te.getClass());
+        if(res != null) {
+            LightColor color = ConfigHandler.teLight.get(res.toString());
+            if (color != null) {
+                event.addCapability(new ResourceLocation("albedo", "constant_light_provider"), new ConstantCapProvider(color));
+                return;
+            }
+        }
+        //te list
 
-                @Override
-                public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-                    return capability == Albedo.LIGHT_PROVIDER_CAPABILITY;
-                }
-
-                @Nullable
-                @Override
-                public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-                    return (T) new TorchLightProvider();
-                }
-            });
-        }*/
-        if (Item.getItemFromBlock(event.getObject().getBlockType()).getRegistryName().equals("minecraft:torch")) {
-            //TODO match config
+        //Add TE for Non-te blocks
+        if(te instanceof LightDummyTile) {
+            if(te instanceof SwitchableRedstoneDummy) {
+                event.addCapability(new ResourceLocation("albedo", "switch_light_provider"), new SwitchableLightCapProvider(null));
+                return;
+            }
+            if(te instanceof MetaSensitiveDummy) {
+                event.addCapability(new ResourceLocation("albedo", "meta_light_provider"), new MetaSensCapProvider(null));
+                return;
+            }
+            if(torchList.length > 0 || constantList.length > 0 || blockList.length > 0) {
+                event.addCapability(new ResourceLocation("albedo", "dummy_light_provider"), new DummyCapProvider());
+                return;
+            }
+        }
+        if(te instanceof TileEntityFurnace) {
+            event.addCapability(new ResourceLocation("albedo", "furnace_light_provider"), new FurnaceLightCapProvider());
+        }
+        if(te instanceof TileEntityBeacon) {
+            event.addCapability(new ResourceLocation("albedo", "beacon_light_provider"), new BeaconLightCapProvider());
         }
     }
 
     @SubscribeEvent
-    public void attachCapabilities(AttachCapabilitiesEvent<ItemStack> event) {
-        ItemStack item = event.getObject();
-        String regname = event.getObject().getItem().getRegistryName().toString();
-        if (regname.equals("minecraft:torch")) {
-            event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
-
-                @Override
-                public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-                    return capability == LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY;
-                }
-
-                @Nullable
-                @Override
-                public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-                    return (T) new TorchLightProvider();
-                }
-            });
-            Albedo.registerBlockHandler(Block.getBlockFromItem(item.getItem()), (blockPos, iBlockState, gatherLightsEvent) -> gatherLightsEvent.add(Light.builder()
-                    .pos(
-                            blockPos.getX(),
-                            blockPos.getY(),
-                            blockPos.getZ()
-                    )
-                    .color(1.0f, 0.78431374f, 0)
-                    .color(1.0f, 1.0f, 1.0f)
-                    .direction(10f, 0f, 0f, (float) (Math.PI / 8.0))
-                    .radius(10)
-                    .build()
-            ));
-        } else if (regname.equals("minecraft:redstone_torch")) {
-            event.addCapability(new ResourceLocation("albedo", "light_provider"), new ICapabilityProvider() {
-                @Override
-                public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-                    return capability == LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY;
-                }
-
-                @Nullable
-                @Override
-                public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-                    return (T) new RedstoneTorchProvider();
-                }
-            });
-            Albedo.registerBlockHandler(Block.getBlockFromItem(item.getItem()), (blockPos, iBlockState, gatherLightsEvent) -> gatherLightsEvent.add(Light.builder()
-                    .pos(
-                            blockPos.getX(),
-                            blockPos.getY(),
-                            blockPos.getZ()
-                    )
-                    .color(1.0f, 0, 0)
-                    .radius(5)
-                    //.color(1, 1, 1)
-                    //.direction(10f, 0f, 0f, (float)(Math.PI/8.0))
-                    //.direction(heading, (float)(Math.PI/3.0))
-                    .build()
-            ));
+    public void attachItemCapabilities(AttachCapabilitiesEvent<ItemStack> event) {
+        ItemStack itemstack = event.getObject();
+        Item item = itemstack.getItem();
+        LightColor color = ConfigHandler.torchLight.get(item);
+        if (color != null) {
+            event.addCapability(new ResourceLocation("albedo", "torch_light_provider"), new TorchCapProvider(color));
+        }
+        color = ConfigHandler.constantLight.get(item);
+        if (color != null) {
+            event.addCapability(new ResourceLocation("albedo", "constant_light_provider"), new ConstantCapProvider(color));
         }
 
     }
 
-    public static class TorchLightProvider implements ILightProvider {
-        @Override
-        public void gatherLights(GatherLightsEvent event, Entity entity) {
-            event.add(Light.builder()
-                    .pos(
-                            (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
-                            (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
-                            (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * (double) Minecraft.getMinecraft().getRenderPartialTicks())
-                    )
-                    .color(1.0f, 0.78431374f, 0)
-                    .color(1.0f, 1.0f, 1.0f)
-                    .direction(10f, 0f, 0f, (float) (Math.PI / 8.0))
-                    .radius(10)
-                    .build()
-            );
+    @SubscribeEvent
+    public void attachEntityCapabilities(AttachCapabilitiesEvent<Entity> event) {
+        Entity e = event.getObject();
+        if(e instanceof EntityCreeper) {
+            event.addCapability(new ResourceLocation("albedo", " creeper_light_provider"), new CreeperLightCapProvider());
         }
-
-        @Override
-        public void gatherLights(GatherLightsEvent event, TileEntity context) {
-
+        event.addCapability(new ResourceLocation("albedo", "burning_light_provider"), new BurningLightCapProvider());
+        /*if(e instanceof EntityLivingBase) {
+            event.addCapability(new ResourceLocation("albedo", "light_provider"), new BurningLightCapProvider());
+            return;
         }
-
-
+        if(e instanceof EntityItem) {
+            event.addCapability(new ResourceLocation("albedo", "light_provider"), new BurningLightCapProvider());
+            return;
+        }*/
     }
 
-    public static class RedstoneTorchProvider implements ILightProvider {
-        @Override
-        public void gatherLights(GatherLightsEvent event, Entity entity) {
-            //float theta = entity.ticksExisted / 10f;
-            //Vec3d heading = new Vec3d(10, 0, 0).rotateYaw(theta);
-            event.add(Light.builder()
-                    .pos(
-                            (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
-                            (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * (double) Minecraft.getMinecraft().getRenderPartialTicks()),
-                            (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * (double) Minecraft.getMinecraft().getRenderPartialTicks())
-                    )
-                    .color(1.0f, 0, 0)
-                    .radius(15)
-                    //.color(1, 1, 1)
-                    //.direction(10f, 0f, 0f, (float)(Math.PI/8.0))
-                    //.direction(heading, (float)(Math.PI/3.0))
-                    .build()
-            );
-        }
-
-        @Override
-        public void gatherLights(GatherLightsEvent event, TileEntity context) {
-
-        }
-
-
-
-    }
 }

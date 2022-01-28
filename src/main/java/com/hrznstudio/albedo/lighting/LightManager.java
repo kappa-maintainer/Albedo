@@ -1,21 +1,18 @@
 package com.hrznstudio.albedo.lighting;
 
-import com.hrznstudio.albedo.Albedo;
 import com.hrznstudio.albedo.ConfigManager;
+import com.hrznstudio.albedo.capability.LightCapabilityHandler;
 import com.hrznstudio.albedo.event.GatherLightsEvent;
 import com.hrznstudio.albedo.util.ShaderManager;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
@@ -28,6 +25,8 @@ public class LightManager {
     public static ICamera camera;
     public static ArrayList<Light> lights = new ArrayList<Light>();
     public static DistComparator distComparator = new DistComparator();
+    public static TEDistComparator teDistComparator = new TEDistComparator();
+    private static ArrayList<TileEntity> te;
 
     public static void uploadLights() {
         ShaderManager shader = ShaderManager.getCurrentShader();
@@ -84,6 +83,9 @@ public class LightManager {
                 cameraPos.y + maxDist,
                 cameraPos.z + maxDist
         ))) {
+            if(e.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
+                e.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+            }
             if (e instanceof EntityItem) {
                 if(((EntityItem) e).getItem().hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
                     ((EntityItem) e).getItem().getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
@@ -100,16 +102,18 @@ public class LightManager {
                 }
             }
         }
-
+        int i = 0;
+        //te = new ArrayList<>(world.loadedTileEntityList);
+        //te.sort(teDistComparator);
         for (TileEntity t : world.loadedTileEntityList) {
             if(t.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, null)) {
                 t.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, t);
+                i++;
             }
-            if(t instanceof ILightProvider) {
-                ((ILightProvider) t).gatherLights(event, t);
-            }
+            //if(i > ConfigManager.maxLights)break;
         }
 
+        //Seems not working
         lights.sort(distComparator);
     }
 
@@ -122,6 +126,15 @@ public class LightManager {
         public int compare(Light a, Light b) {
             double dist1 = cameraPos.squareDistanceTo(a.x, a.y, a.z);
             double dist2 = cameraPos.squareDistanceTo(b.x, b.y, b.z);
+            return Double.compare(dist1, dist2);
+        }
+    }
+
+    public static class TEDistComparator implements Comparator<TileEntity> {
+        @Override
+        public int compare(TileEntity a, TileEntity b) {
+            double dist1 = cameraPos.squareDistanceTo(a.getPos().getX(), a.getPos().getY(), a.getPos().getZ());
+            double dist2 = cameraPos.squareDistanceTo(b.getPos().getX(), b.getPos().getY(),b.getPos().getZ());
             return Double.compare(dist1, dist2);
         }
     }
