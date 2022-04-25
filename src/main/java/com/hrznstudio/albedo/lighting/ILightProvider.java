@@ -8,9 +8,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public interface ILightProvider {
     @SideOnly(Side.CLIENT)
-    void gatherLights(GatherLightsEvent event, Entity context);
+    default void gatherLights(GatherLightsEvent event) {}
 
-    @SideOnly(Side.CLIENT)
-    void gatherLights(GatherLightsEvent event, TileEntity context);
 
 }

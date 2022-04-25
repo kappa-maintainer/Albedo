@@ -1,7 +1,6 @@
 package com.hrznstudio.albedo.lighting;
 
 import com.hrznstudio.albedo.ConfigManager;
-import com.hrznstudio.albedo.capability.LightCapabilityHandler;
 import com.hrznstudio.albedo.event.GatherLightsEvent;
 import com.hrznstudio.albedo.util.ShaderManager;
 import net.minecraft.client.Minecraft;
@@ -9,9 +8,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -25,25 +22,29 @@ public class LightManager {
     public static ICamera camera;
     public static ArrayList<Light> lights = new ArrayList<Light>();
     public static DistComparator distComparator = new DistComparator();
-    public static TEDistComparator teDistComparator = new TEDistComparator();
-    private static ArrayList<TileEntity> te;
 
+
+    public static void addLight(Light light) {
+        if(light != null) {
+            lights.add(light);
+        }
+    }
     public static void uploadLights() {
         ShaderManager shader = ShaderManager.getCurrentShader();
         shader.setUniform("lightCount", lights.size());
         for (int i = 0; i < Math.min(ConfigManager.maxLights, lights.size()); i++) {
-            if (i < lights.size()) {
-                Light l = lights.get(i);
-                shader.setUniform("lights[" + i + "].position", l.x, l.y, l.z);
-                shader.setUniform("lights[" + i + "].color", l.r, l.g, l.b, l.a);
-                shader.setUniform("lights[" + i + "].heading", l.rx, l.ry, l.rz);
-                shader.setUniform("lights[" + i + "].angle", l.angle);
-            } else {
+            //if (i < lights.size()) {
+            Light l = lights.get(i);
+            shader.setUniform("lights[" + i + "].position", l.x, l.y, l.z);
+            shader.setUniform("lights[" + i + "].color", l.r, l.g, l.b, l.a);
+            shader.setUniform("lights[" + i + "].heading", l.rx, l.ry, l.rz);
+            shader.setUniform("lights[" + i + "].angle", l.angle);
+            //} else {
                 //shader.setUniform("lights[" + i + "].position", 0, 0, 0);
                 //shader.setUniform("lights[" + i + "].color", 0, 0, 0, 0);
                 //shader.setUniform("lights[" + i + "].heading", 0, 0, 0);
                 //shader.setUniform("lights[" + i + "].angle", 0);
-            }
+            //}
         }
     }
 
@@ -83,34 +84,17 @@ public class LightManager {
                 cameraPos.y + maxDist,
                 cameraPos.z + maxDist
         ))) {
-            if(e.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                e.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
-            }
             if (e instanceof EntityItem) {
-                if(((EntityItem) e).getItem().hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    ((EntityItem) e).getItem().getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
-                }
-            }
-            for (ItemStack itemStack : e.getHeldEquipment()) {
-                if(itemStack.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    itemStack.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
-                }
-            }
-            for (ItemStack itemStack : e.getArmorInventoryList()) {
-                if(itemStack.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH)) {
-                    itemStack.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, EnumFacing.NORTH).gatherLights(event, e);
+                if(e instanceof ILightProvider) {
+                    ((ILightProvider) e).gatherLights(event);
                 }
             }
         }
-        int i = 0;
-        //te = new ArrayList<>(world.loadedTileEntityList);
-        //te.sort(teDistComparator);
         for (TileEntity t : world.loadedTileEntityList) {
-            if(t.hasCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, null)) {
-                t.getCapability(LightCapabilityHandler.LIGHT_PROVIDER_CAPABILITY, null).gatherLights(event, t);
-                i++;
+            if(t instanceof ILightProvider) {
+                ((ILightProvider) t).gatherLights(event);
+
             }
-            //if(i > ConfigManager.maxLights)break;
         }
 
         //Seems not working
@@ -130,12 +114,4 @@ public class LightManager {
         }
     }
 
-    public static class TEDistComparator implements Comparator<TileEntity> {
-        @Override
-        public int compare(TileEntity a, TileEntity b) {
-            double dist1 = cameraPos.squareDistanceTo(a.getPos().getX(), a.getPos().getY(), a.getPos().getZ());
-            double dist2 = cameraPos.squareDistanceTo(b.getPos().getX(), b.getPos().getY(),b.getPos().getZ());
-            return Double.compare(dist1, dist2);
-        }
-    }
 }

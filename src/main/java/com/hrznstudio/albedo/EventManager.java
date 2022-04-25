@@ -1,39 +1,33 @@
 package com.hrznstudio.albedo;
 
-import com.hrznstudio.albedo.capability.*;
-import com.hrznstudio.albedo.lighting.ILightProviderBlock;
 import com.hrznstudio.albedo.event.*;
-import com.hrznstudio.albedo.lighting.*;
-import com.hrznstudio.albedo.tileentity.LightDummyTile;
-import com.hrznstudio.albedo.tileentity.MetaSensitiveDummy;
-import com.hrznstudio.albedo.tileentity.SwitchableRedstoneDummy;
+import com.hrznstudio.albedo.lighting.ILightProvider;
+import com.hrznstudio.albedo.lighting.Light;
+import com.hrznstudio.albedo.lighting.LightColor;
+import com.hrznstudio.albedo.lighting.LightManager;
 import com.hrznstudio.albedo.util.ShaderManager;
 import com.hrznstudio.albedo.util.ShaderUtil;
-import net.minecraft.block.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.monster.EntityCreeper;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.*;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.tileentity.TileEntityEndGateway;
+import net.minecraft.tileentity.TileEntityEndPortal;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldProviderHell;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
 import org.lwjgl.opengl.GL11;
 
-import java.util.*;
-
-import static com.hrznstudio.albedo.ConfigManager.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class EventManager {
     public static final Map<BlockPos, List<Light>> EXISTING = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -189,8 +183,6 @@ public class EventManager {
         }
     }
 
-
-
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) {
         postedLights = false;
@@ -199,116 +191,58 @@ public class EventManager {
             ShaderManager.stopShader();
         }
     }
-
-    public static void handleNonTEBlock() {
-        for(Block b: Block.REGISTRY) {
-            if(redstoneLights) {
-                if(b instanceof BlockRedstoneTorch) {
-                    ((ILightProviderBlock)b).setProvider(true);
-                    ((ILightProviderBlock)b).setLightColor(new LightColor(1.0F,0.0F,0.0F,0.6F,3.0F));
-                    continue;
-                }
-                if(b instanceof BlockRedstoneLight) {
-                    ((ILightProviderBlock)b).setProvider(true);
-                    ((ILightProviderBlock)b).setLightColor(new LightColor(0.82F,0.82F,0.0F,0.8F,5.0F));
-                    continue;
-                }
-                if(b instanceof BlockRedstoneOre) {
-                    ((ILightProviderBlock)b).setProvider(true);
-                    ((ILightProviderBlock)b).setLightColor(new LightColor(1.0F,0.0F,0.0F,0.2F,1.5F));
-                    continue;
-                }
-                if(b instanceof BlockRedstoneWire) {
-                    ((ILightProviderBlock)b).setProvider(true);
-                    ((ILightProviderBlock)b).setLightColor(new LightColor(1.0F,0.0F,0.0F,0.0F,2.0F));
-                    continue;
-                }
+    @SubscribeEvent
+    public void renderBurning(RenderEntityEvent evnt){
+        Entity entity = evnt.getEntity();
+        if(entity != null){
+            if(entity.isBurning() && entity.canRenderOnFire()){
+                LightManager.addLight(new Light.Builder()
+                        .pos(entity.getEntityBoundingBox().getCenter())
+                        .color(0.8f, 0.4f, 0f, 2F)
+                        .radius((float)(entity.getRenderBoundingBox().getAverageEdgeLength() * 10))
+                        .build());
             }
-            LightColor color = ConfigHandler.torchLight.get(Item.getItemFromBlock(b));
-            if(color != null) {
-                ((ILightProviderBlock)b).setProvider(true);
-                ((ILightProviderBlock)b).setLightColor(color);
-            }
-            color = ConfigHandler.constantLight.get(Item.getItemFromBlock(b));
-            if(color != null) {
-                ((ILightProviderBlock)b).setProvider(true);
-                ((ILightProviderBlock)b).setLightColor(color);
-            }
-            color = ConfigHandler.blockLight.get(b);
-            if(color != null) {
-                ((ILightProviderBlock)b).setProvider(true);
-                ((ILightProviderBlock)b).setLightColor(color);
-            }
-
         }
     }
 
     @SubscribeEvent
-    public void attachTileEntityCapabilities(AttachCapabilitiesEvent<TileEntity> event) {
-        TileEntity te = event.getObject();
-        ResourceLocation res = TileEntity.getKey(te.getClass());
-        if(res != null) {
-            LightColor color = ConfigHandler.teLight.get(res.toString());
-            if (color != null) {
-                event.addCapability(new ResourceLocation("albedo", "constant_light_provider"), new ConstantCapProvider(color));
-                return;
+    public void renderItemEntityLight(RenderEntityEvent evnt){
+        Entity entity = evnt.getEntity();
+        LightColor color;
+        if(entity instanceof EntityItem){
+            color = ConfigHandler.constantLight.get(((EntityItem) entity).getItem().getItem());
+            if(color != null) {
+                LightManager.addLight(new Light.Builder().color(color).pos(entity).noDir().build());
             }
-        }
-        //te list
+            if(!entity.isInWater()) {
+                color = ConfigHandler.torchLight.get(((EntityItem) entity).getItem().getItem());
+                if(color != null)
+                    LightManager.addLight(new Light.Builder().color(color).pos(entity).noDir().build());
 
-        //Add TE for Non-te blocks
-        if(te instanceof LightDummyTile) {
-            if(te instanceof SwitchableRedstoneDummy) {
-                event.addCapability(new ResourceLocation("albedo", "switch_light_provider"), new SwitchableLightCapProvider(null));
-                return;
             }
-            if(te instanceof MetaSensitiveDummy) {
-                event.addCapability(new ResourceLocation("albedo", "meta_light_provider"), new MetaSensCapProvider(null));
-                return;
-            }
-            if(torchList.length > 0 || constantList.length > 0 || blockList.length > 0) {
-                event.addCapability(new ResourceLocation("albedo", "dummy_light_provider"), new DummyCapProvider());
-                return;
-            }
-        }
-        if(te instanceof TileEntityFurnace) {
-            event.addCapability(new ResourceLocation("albedo", "furnace_light_provider"), new FurnaceLightCapProvider());
-        }
-        if(te instanceof TileEntityBeacon) {
-            event.addCapability(new ResourceLocation("albedo", "beacon_light_provider"), new BeaconLightCapProvider());
         }
     }
-
     @SubscribeEvent
-    public void attachItemCapabilities(AttachCapabilitiesEvent<ItemStack> event) {
-        ItemStack itemstack = event.getObject();
-        Item item = itemstack.getItem();
-        LightColor color = ConfigHandler.torchLight.get(item);
-        if (color != null) {
-            event.addCapability(new ResourceLocation("albedo", "torch_light_provider"), new TorchCapProvider(color));
-        }
-        color = ConfigHandler.constantLight.get(item);
-        if (color != null) {
-            event.addCapability(new ResourceLocation("albedo", "constant_light_provider"), new ConstantCapProvider(color));
-        }
+    public void renderLivingEntityLight(RenderEntityEvent evnt){
+        Entity entity = evnt.getEntity();
+        LightColor color;
+        if(entity instanceof EntityLivingBase){
+            color = ConfigHandler.constantLight.get(((EntityLivingBase) entity).getHeldItemMainhand().getItem());
+            if(color != null) {
+                LightManager.addLight(new Light.Builder().color(color).pos(entity).noDir().build());
 
-    }
+                LightManager.addLight(new Light.Builder().color(color).pos(entity).noDir().build());
+            }
+            if (!entity.isInWater()) {
+                color = ConfigHandler.torchLight.get(((EntityLivingBase) entity).getHeldItemMainhand().getItem());
+                if(color != null) {
+                    LightManager.addLight(new Light.Builder().color(color).pos(entity).noDir().build());
 
-    @SubscribeEvent
-    public void attachEntityCapabilities(AttachCapabilitiesEvent<Entity> event) {
-        Entity e = event.getObject();
-        if(e instanceof EntityCreeper) {
-            event.addCapability(new ResourceLocation("albedo", " creeper_light_provider"), new CreeperLightCapProvider());
+                    LightManager.addLight(new Light.Builder().color(color).pos(entity).noDir().build());
+
+                }
+            }
         }
-        event.addCapability(new ResourceLocation("albedo", "burning_light_provider"), new BurningLightCapProvider());
-        /*if(e instanceof EntityLivingBase) {
-            event.addCapability(new ResourceLocation("albedo", "light_provider"), new BurningLightCapProvider());
-            return;
-        }
-        if(e instanceof EntityItem) {
-            event.addCapability(new ResourceLocation("albedo", "light_provider"), new BurningLightCapProvider());
-            return;
-        }*/
     }
 
 }

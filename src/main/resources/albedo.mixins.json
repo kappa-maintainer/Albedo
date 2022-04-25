@@ -14,10 +14,8 @@
   "setSourceFile": true,
   "minVersion": "0.8",
   "mixins": [
-    "MixinBlock",
-    "MixinMetaSensBlock",
-    "MixinRedstoneLightBlock",
-    "MixinRedstoneOreBlock",
-    "MixinRedstoneTorchBlock"
+    "entity.MixinEntityCreeper",
+    "tileentity.MixinTileEntityBeacon",
+    "tileentity.MixinTileEntityFurnace"
   ]
 }

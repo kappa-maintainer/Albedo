@@ -16,6 +16,7 @@ public class ConfigHandler {
     public static final LinkedHashMap<Item, LightColor> constantLight = new LinkedHashMap<Item, LightColor>();
     public static final LinkedHashMap<Block, LightColor> blockLight = new LinkedHashMap<Block, LightColor>();
     public static final LinkedHashMap<String, LightColor> teLight = new LinkedHashMap<String, LightColor>();
+    public static final LinkedHashMap<String, LightColor> entityLight = new LinkedHashMap<String, LightColor>();
     public static void reloadList() {
         String[] e = {""};
         Item temp;
@@ -38,19 +39,24 @@ public class ConfigHandler {
             }
         }
         Block tempblock;
-        if(blockList.length > 0) {
+        /*if(blockList.length > 0) {
             for(String s: blockList) {
                 e = s.split("\\|");
                 tempblock = Block.getBlockFromName(e[0]);
                 if(tempblock != null)
                     blockLight.put(tempblock, new LightColor(new Float(e[1]), new Float(e[2]), new Float(e[3]), new Float(e[4]), new Float(e[5])));
             }
-        }
+        }*/
         if(teList.length > 0) {
             for(String s: teList) {
                 e = s.split("\\|");
-                if(e != null)
-                    teLight.put(e[0], new LightColor(new Float(e[1]), new Float(e[2]), new Float(e[3]), new Float(e[4]), new Float(e[5])));
+                teLight.put(e[0], new LightColor(new Float(e[1]), new Float(e[2]), new Float(e[3]), new Float(e[4]), new Float(e[5])));
+            }
+        }
+        if(entityList.length > 0) {
+            for(String s: entityList) {
+                e = s.split("\\|");
+                entityLight.put(e[0], new LightColor(new Float(e[1]), new Float(e[2]), new Float(e[3]), new Float(e[4]), new Float(e[5])));
             }
         }
 

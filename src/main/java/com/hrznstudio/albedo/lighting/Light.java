@@ -149,6 +149,13 @@ public class Light {
             this.angle = angle;
             return this;
         }
+        public Builder noDir() {
+            this.rx = 0;
+            this.ry = 0;
+            this.rz = 0;
+            this.angle = 0;
+            return this;
+        }
         
         public Light build() {
             if (Float.isFinite(x) && Float.isFinite(y) && Float.isFinite(z) &&

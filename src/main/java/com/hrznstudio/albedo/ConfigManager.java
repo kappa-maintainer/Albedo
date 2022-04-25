@@ -23,17 +23,14 @@ public class ConfigManager {
     @LangKey("albedo.config.disableLights")
     public static boolean disableLights = false;
 
-    @Comment({"Redstone Stuffs"})
-    @LangKey("albedo.config.redstonelights")
-    public static boolean redstoneLights = true;
 
-    @Comment({"Items would not light under water, e.g. torch"})
+    @Comment({"Items would not light under water, e.g. torch. Useless for now"})
     @LangKey("albedo.config.torchlight")
     @Config.RequiresMcRestart
     public static String[] torchList = {"minecraft:torch|1|1|0.7|0.9|5"
     };
 
-    @Comment({"Items would glow everywhere, e.g. glowstone"})
+    @Comment({"Items would glow everywhere, e.g. glowstone. Useless for now"})
     @LangKey("albedo.config.constantlight")
     @Config.RequiresMcRestart
     public static String[] constantList = {
@@ -45,7 +42,7 @@ public class ConfigManager {
             "minecraft:end_rod|1|1|1|0.9|7"
     };
 
-    @Comment({"Blocks don't have item form or do not need to emit light in hand"})
+    @Comment({"Blocks don't have item form or do not need to emit light in hand, useless for now"})
     @LangKey("albedo.config.blocklight")
     @Config.RequiresMcRestart
     public static String[] blockList = {
@@ -62,6 +59,13 @@ public class ConfigManager {
     @LangKey("albedo.config.tileentity")
     @Config.RequiresMcRestart
     public static String[] teList = {
+
+    };
+
+    @Comment({"Constant light entity, Blaze?"})
+    @LangKey("albedo.config.tileentity")
+    @Config.RequiresMcRestart
+    public static String[] entityList = {
 
     };
 

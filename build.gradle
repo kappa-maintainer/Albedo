@@ -111,7 +111,8 @@ dependencies {
         exclude module: "gson"
         exclude module: "commons-io"
     }
-    compileOnly ("loli:mixinbooter:3.2")
+    compileOnly fg.deobf("curse.maven:mixinbooter-419286:3687785")
+    runtimeOnly ("curse.maven:mixinbooter-419286:3687785")
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
